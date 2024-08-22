@@ -1,86 +1,74 @@
-const express = require("express")
-const User = require("../model/userModel")
-const userRouter = express.Router()
+const express = require("express");
+const User = require("../model/userModel");
+const userRouter = express.Router();
 
-
-
-userRouter.get("/",(req,res)=>{
+userRouter.get("/", (req, res) => {
     try {
-        return res.status(200).send("How it work?")
+        return res.status(200).send("How it works?");
     } catch (error) {
-        return res.status(400).send("error")
+        return res.status(500).send("Internal Server Error");
     }
-})
-
-
-
-// show data use of get
-userRouter.get("/getUser",async (req,res)=>{
+});
+ 
+userRouter.get("/users", async (req, res) => {
     try {
-        let getAllUser = await User.find()
-        return res.status(200).send(getAllUser)
+        const users = await User.find();
+        return res.status(200).json(users);
     } catch (error) {
-        return res.status(400).send(`Internal error`)
+        return res.status(500).send("Internal Server Error");
     }
-})
+});
 
-
-// use of post save a data on server
-userRouter.post("/postUser",async (req,res)=>{
-    let payload = req.body
+ 
+userRouter.post("/users", async (req, res) => {
+    const { name, email, password } = req.body;
     try {
-        // create usre id code
         const ID = Math.floor(100000 + Math.random() * 900000);
-        console.log("user id", ID)
+        console.log("User ID:", ID);
 
-        const saveData = new User({
-            userId:ID,
-            name:payload.name,
-            email:payload.email,
-            password:payload.password
-        })
+        const newUser = new User({
+            userId: ID,
+            name,
+            email,
+            password
+        });
 
-        await saveData.save()
-        return res.status(200).send("User created successfully")
-    
+        await newUser.save();
+        return res.status(201).send("User created successfully");
     } catch (error) {
-        return res.status(400).send(`Internal error`)
+        return res.status(500).send("Internal Server Error");
     }
-})
-
-
-//delete
-userRouter.post("/deleteUser",async (req,res)=>{
+});
+ 
+userRouter.post("/users/:userId", async (req, res) => {
+    const { userId } = req.params;
     try {
-        let payload = req.body
-        let userId = req.body.userId
-        console.log("user id",userId)
-
-        let deleteUser = await User.findOneAndDelete({userId:payload.userId})
-        console.log("delete user",deleteUser)
-        return res.status(200).send(deleteUser)
-
+        const deletedUser = await User.findOneAndDelete({ userId });
+        if (!deletedUser) {
+            return res.status(404).send("User not found");
+        }
+        return res.status(200).json(deletedUser);
     } catch (error) {
-        return res.status(400).send(`Internal error`)
+        return res.status(500).send("Internal Server Error");
     }
-   
-})
-
-
-// update  
-userRouter.post("/updateUser", async (req,res)=>{
-    let payload = req.body
-    let {userId ,email} = req.body
-    console.log("req.body data", payload)
-
+});
+ 
+userRouter.post("/users/:userId", async (req, res) => {
+    const { userId } = req.params;
+    const { email } = req.body;
     try {
-        let updateUser = await User.findOneAndUpdate({userId:userId},{email:email})
-        console.log("update user",updateUser)
-        return res.status(200).send(updateUser)
+        const updatedUser = await User.findOneAndUpdate(
+            { userId },
+            { email },
+            { new: true }
+        );
+        if (!updatedUser) {
+            return res.status(404).send("User not found");
+        }
+        return res.status(200).json(updatedUser);
     } catch (error) {
-        return res.status(400).send(`Internal error`)
+        return res.status(500).send("Internal Server Error");
     }
-})
+});
 
-
-module.exports = userRouter
+module.exports = userRouter;
